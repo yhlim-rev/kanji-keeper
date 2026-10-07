@@ -1,12 +1,15 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase, Kanji, L } from '@/lib/supabase'
 import { useI18n, LangPills } from '@/lib/i18n'
+import { useAuth } from '@/lib/auth'
+import { saveResult, pickReview } from '@/lib/srs'
 
 // fwd: kanji shown, pick the meaning | rev: meaning shown, pick the kanji | read: kanji shown, pick the reading
 type Kind = 'fwd' | 'rev' | 'read'
 type Opt = { k: Kanji; reading?: string } // k = the kanji this option belongs to
 type Q = { k: Kanji; kind: Kind; opts: Opt[] }
+const COLS = 'id,character,level,onyomi,kunyomi,meaning_en,meaning_ja,meaning_zh'
 
 const shuffle = <T,>(a: T[]) => [...a].sort(() => Math.random() - 0.5)
 const clean = (r: string) => r.replace(/-/g, '').replace(/\./g, '・') // やす.む -> やす・む
@@ -43,6 +46,7 @@ export default function Quiz() {
   const [picked, setPicked] = useState<number | null>(null) // index of the chosen option
   const [score, setScore] = useState(0)
   const [err, setErr] = useState(false)
+  const { user } = useAuth()
 
   async function start() {
     setErr(false)
@@ -54,6 +58,22 @@ export default function Quiz() {
     setQs(shuffle(pool).slice(0, Math.min(n, pool.length)).map(k => build(k, pool, shuffle(kinds)[0])))
     setI(0); setPicked(null); setScore(0)
   }
+
+  // /quiz?review=1 : today's review (due cards first, then new kanji), answers are saved for spaced repetition
+  async function startReview() {
+    if (!user) return
+    const [{ data: all }, { data: prog }] = await Promise.all([
+      supabase.from('kanji').select(COLS).order('id'),
+      supabase.from('user_progress').select('kanji_id,due_at').eq('user_id', user.id)])
+    if (!all || all.length < 4) return setErr(true)
+    const pool = all as unknown as Kanji[]
+    setLevel('復習')
+    setQs(pickReview(pool, prog ?? [], 10).map(k => build(k, pool, shuffle<Kind>(['fwd', 'rev', 'read'])[0])))
+    setI(0); setPicked(null); setScore(0)
+  }
+  useEffect(() => {
+    if (user && new URLSearchParams(window.location.search).get('review')) startReview()
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!qs) return (
     <>
@@ -99,7 +119,7 @@ export default function Quiz() {
         {q.opts.map((o, idx) => (
           <button key={idx} disabled={done} className={`card opt ${cls(o, idx)}`}
             style={q.kind === 'rev' ? { fontSize: 40, fontFamily: 'var(--serif)' } : { fontSize: 22 }}
-            onClick={() => { setPicked(idx); if (isRight(o)) setScore(s => s + 1) }}>
+            onClick={() => { setPicked(idx); if (isRight(o)) setScore(s => s + 1); if (user) saveResult(user.id, q.k.id, isRight(o)) }}>
             {label(o)}{done && (isRight(o) ? ' ✓' : idx === picked ? ' ✕' : '')}
           </button>
         ))}

@@ -1,26 +1,29 @@
 'use client'
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n'
-import { isConfigured } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth'
+import { isConfigured, supabase } from '@/lib/supabase'
 
 export default function Nav() {
-  const { ui, setUi, t } = useI18n()
+  const { t } = useI18n()
+  const { user } = useAuth()
   return (
     <>
-    <nav className="nav">
-      <Link href="/" className="brand">Kanji Keeper</Link>
-      <Link href="/" className="m">{t('dict')}</Link>
-      <Link href="/quiz" className="m">{t('quiz')}</Link>
-      <div className="pill" style={{ marginLeft: 'auto' }} role="group" aria-label="Interface language">
-        <button className={ui === 'en' ? 'on' : ''} onClick={() => setUi('en')}>EN</button>
-        <button className={ui === 'ja' ? 'on' : ''} onClick={() => setUi('ja')}>日本語</button>
-      </div>
-    </nav>
-    {!isConfigured && (
-      <div className="card" style={{ borderColor: 'var(--acc)', marginBottom: 16 }}>
-        Supabase is not connected yet. Open src/lib/supabase.ts and paste your Project URL and anon key (or fill .env.local), then restart the dev server.
-      </div>
-    )}
+      <nav className="nav">
+        <Link href="/" className="logo" aria-label="Kanji Keeper">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8834a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>
+        </Link>
+        <Link href="/" className="brand">Kanji Keeper</Link>
+        <Link href="/dictionary" className="m">{t('dict')}</Link>
+        <Link href="/quiz" className="m">{t('quiz')}</Link>
+        <Link href={user ? '/quiz?review=1' : '/login'} className="m">{t('review')}</Link>
+        <div style={{ marginLeft: 'auto' }}>
+          {user
+            ? <button className="btn ghost" onClick={() => supabase.auth.signOut()}>{t('logout')}</button>
+            : <Link href="/login" className="btn ghost">{t('login')}</Link>}
+        </div>
+      </nav>
+      {!isConfigured && <div className="card" style={{ borderColor: 'var(--acc)', marginBottom: 16 }}>{t('setup')}</div>}
     </>
   )
 }

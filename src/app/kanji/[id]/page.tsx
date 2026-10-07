@@ -24,7 +24,7 @@ export default function KanjiPage() {
   const sents = [...k.sentences].sort((a, b) => a.id - b.id)
   return (
     <>
-      <div className="row"><Link href="/" className="m">{t('back')}</Link><LangPills /></div>
+      <div className="row"><Link href="/dictionary" className="m">{t('back')}</Link><LangPills /></div>
       <div className="two">
         <div className="card" style={{ textAlign: 'center' }}>
           <div className="k" style={{ fontSize: 150, lineHeight: 1.15 }}>{k.character}</div>
@@ -35,14 +35,14 @@ export default function KanjiPage() {
           </div>
         </div>
         <div className="stack">
-          <div className="card">
+          <div className="card sec s1">
             <h2 style={{ marginTop: 0 }}>{t('meaning')}</h2>
             <p style={{ fontSize: 24, margin: '0 0 12px' }}>{L(k, 'meaning', lang)}</p>
-            <p className="m" style={{ margin: 0 }}>{t('on')}: {k.onyomi.replaceAll(';', '、')}</p>
-            <p className="m" style={{ margin: 0 }}>{t('kun')}: {k.kunyomi ? k.kunyomi.replaceAll(';', '、') : '–'}</p>
+            <p className="m" style={{ margin: 0 }}><b className="c-on">{t('on')}</b>: {k.onyomi.replaceAll(';', '、')}</p>
+            <p className="m" style={{ margin: 0 }}><b className="c-kun">{t('kun')}</b>: {k.kunyomi ? k.kunyomi.replaceAll(';', '、') : '–'}</p>
           </div>
-          <div className="card"><h2 style={{ marginTop: 0 }}>{t('tip')}</h2><p style={{ margin: 0 }}>{L(k, 'explanation', lang)}</p></div>
-          <div className="card">
+          <div className="card sec s2"><h2 style={{ marginTop: 0 }}>{t('tip')}</h2><p style={{ margin: 0 }}>{L(k, 'explanation', lang)}</p></div>
+          <div className="card sec s3">
             <h2 style={{ marginTop: 0 }}>{t('words')}</h2>
             {k.words.map(w => (
               <p key={w.id} style={{ margin: '6px 0' }}>
@@ -50,7 +50,7 @@ export default function KanjiPage() {
               </p>
             ))}
           </div>
-          <div className="card">
+          <div className="card sec s4">
             <h2 style={{ marginTop: 0 }}>{t('sents')}</h2>
             {sents.map(s => (
               <div key={s.id} style={{ margin: '10px 0' }}>
